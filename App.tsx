@@ -15,7 +15,7 @@ const parseCSV = (text: string): string[][] => {
 };
 
 // ID của Google Sheet được chỉ định sẵn
-const GOOGLE_SHEET_ID = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
+const GOOGLE_SHEET_ID = '1IBNYEMAIHjzUPSEcG1NIvn80t_vJO0_pFYiTcWquRH4';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -45,7 +45,7 @@ const Clock: React.FC = () => {
     };
 
     return (
-        <div className="text-right text-red-100 font-serif">
+        <div className="text-right text-red-100">
             <p className="text-sm">{formatDate(time)}</p>
             <p className="text-lg font-bold tracking-wider">{formatTime(time)}</p>
         </div>
@@ -108,8 +108,10 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (isManual: boolean = false) => {
+    if (isManual) {
+        setLoading(true);
+    }
     setError(null);
     
     try {
@@ -135,21 +137,34 @@ const App: React.FC = () => {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Đã có lỗi xảy ra. Hãy chắc chắn rằng bảng tính của bạn được chia sẻ công khai.');
     } finally {
-      setLoading(false);
+      if (isManual || sheetData.length === 0) {
+        setLoading(false);
+      }
     }
+  }, [sheetData.length]);
+
+  // Tải dữ liệu lần đầu
+  useEffect(() => {
+    fetchData(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Tự động làm mới dữ liệu sau mỗi 10 giây
   useEffect(() => {
-    fetchData();
+    const interval = setInterval(() => {
+      fetchData(false); // false để không hiển thị spinner loading
+    }, 10000); // 10 giây
+
+    return () => clearInterval(interval); // Dọn dẹp khi component unmount
   }, [fetchData]);
 
   return (
-    <main className="bg-red-600 min-h-screen w-full flex flex-col items-center p-4 sm:p-6 md:p-8 text-white font-serif">
+    <main className="bg-gradient-to-br from-red-600 to-red-800 min-h-screen w-full flex flex-col items-center p-4 sm:p-6 md:p-8 text-white">
       <div className="w-full max-w-7xl">
         
         <header className="mb-8 flex justify-between items-start">
           <div className="text-left">
-            <h2 className="text-2xl md:text-3xl font-bold text-yellow-400 tracking-wider">VÀNG BẠC HÙNG HẠ</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-yellow-300 tracking-wider font-heading">VÀNG BẠC HÙNG HẠ</h2>
             <p className="text-base text-red-100">Đ/c: 136 - Phố huyện</p>
             <p className="text-base text-red-100">ĐT: 0356999659</p>
           </div>
@@ -158,21 +173,22 @@ const App: React.FC = () => {
 
         <div className="text-center">
             <div className="flex justify-center items-center gap-4 mb-8">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 md:w-12 md:h-12 text-yellow-400">
-                   <path d="M12 3c-4.39 0-8 1.79-8 4s3.61 4 8 4 8-1.79 8-4-3.61-4-8-4zm0 6c-3.15 0-5.88-1.2-6.73-2.79.85-1.59 3.58-2.79 6.73-2.79s5.88 1.2 6.73 2.79c-.85 1.59-3.58-2.79-6.73-2.79zm0 3c-4.39 0-8 1.79-8 4s3.61 4 8 4 8-1.79 8-4-3.61-4-8-4zm0 6c-3.15 0-5.88-1.2-6.73-2.79.85-1.59 3.58-2.79 6.73-2.79s5.88 1.2 6.73 2.79c-.85 1.59-3.58-2.79-6.73-2.79z"/>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 md:w-12 md:h-12 text-yellow-300">
+                    <path d="M11.25 4.533A9.707 9.707 0 0 0 6 3a9.735 9.735 0 0 0-3.25.555.75.75 0 0 0-.5.707v14.25a.75.75 0 0 0 .5.707A9.735 9.735 0 0 0 6 21a9.735 9.735 0 0 0 3.25-.555.75.75 0 0 0 .5-.707V5.24a.75.75 0 0 0-.5-.707Z" />
+                    <path d="M15.75 4.533A9.707 9.707 0 0 0 10.5 3a9.735 9.735 0 0 0-3.25.555.75.75 0 0 0-.5.707V19.5a.75.75 0 0 0 .5.707A9.735 9.735 0 0 0 10.5 21a9.735 9.735 0 0 0 3.25-.555.75.75 0 0 0 .5-.707V5.24a.75.75 0 0 0-.5-.707Z" />
+                    <path d="M20.25 4.533A9.707 9.707 0 0 0 15 3a9.735 9.735 0 0 0-3.25.555.75.75 0 0 0-.5.707V19.5a.75.75 0 0 0 .5.707A9.735 9.735 0 0 0 15 21a9.735 9.735 0 0 0 3.25-.555.75.75 0 0 0 .5-.707V5.24a.75.75 0 0 0-.5-.707Z" />
                 </svg>
-                 <h1 className="text-4xl md:text-5xl font-bold text-yellow-400 uppercase">
+                 <h1 className="text-4xl md:text-5xl font-bold text-yellow-300 uppercase font-heading">
                     Bảng giá vàng hôm nay
                 </h1>
                 <button
-                    onClick={fetchData}
-                    className="ml-4 p-2 bg-yellow-400 text-red-700 rounded-full hover:bg-yellow-500 transition-transform duration-200 active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => fetchData(true)}
+                    className="ml-4 p-2 bg-yellow-300 text-red-800 rounded-full hover:bg-yellow-400 transition-transform duration-200 active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Cập nhật dữ liệu"
                     disabled={loading}
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M20 4h-5v5M4 20h5v-5" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M20.49 15a9 9 0 11-1.63-9.51" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-4.991-2.691L7.985 5.982m13.03 4.993l-3.181-3.182a8.25 8.25 0 00-11.667 0L2.985 14.651" />
                     </svg>
                 </button>
             </div>
@@ -180,25 +196,25 @@ const App: React.FC = () => {
         
         {loading && sheetData.length === 0 && (
            <div className="flex justify-center items-center h-60">
-             <svg className="animate-spin h-10 w-10 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+             <svg className="animate-spin h-10 w-10 text-yellow-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
              </svg>
            </div>
         )}
 
-        {error && <div className="bg-red-900/80 border border-yellow-400 text-white p-4 rounded-lg my-6">{error}</div>}
+        {error && <div className="bg-red-900/80 border border-yellow-400/50 text-white p-4 rounded-lg my-6">{error}</div>}
 
         {!error && sheetData.length > 0 && (
           <div className="mt-8 w-full flex flex-col lg:flex-row gap-8 items-start">
             
-            <div className="w-full lg:w-1/2">
-                <div className="bg-red-800/50 backdrop-blur-sm border border-red-500 rounded-xl shadow-2xl p-4 md:p-6 overflow-x-auto">
-                    <table className="w-full min-w-max text-left border-collapse">
+            <div className="w-full lg:w-[60%]">
+                <div className="bg-black/30 backdrop-blur-sm border border-yellow-400/40 rounded-xl shadow-2xl shadow-black/40 p-4 md:p-6">
+                    <table className="w-full text-left border-collapse table-fixed">
                         <thead>
-                        <tr className="border-b border-red-500">
+                        <tr className="border-b border-yellow-400/60">
                             {sheetData[0] && sheetData[0].map((headerCell, index) => (
-                            <th key={index} className="p-4 sm:p-5 font-semibold text-yellow-300 bg-red-700/60 uppercase text-lg whitespace-nowrap">
+                            <th key={index} className={`p-4 sm:p-5 font-bold text-yellow-200 bg-black/50 uppercase text-lg md:text-xl whitespace-normal font-heading ${index > 0 ? 'w-[30%] text-right' : 'w-[40%]'}`}>
                                 {headerCell}
                             </th>
                             ))}
@@ -206,9 +222,9 @@ const App: React.FC = () => {
                         </thead>
                         <tbody>
                         {sheetData.slice(1).map((row, rowIndex) => (
-                            <tr key={rowIndex} className="border-b border-red-500 last:border-b-0 hover:bg-red-700/40 transition-colors duration-200">
+                            <tr key={rowIndex} className="border-b border-yellow-500/20 last:border-b-0 hover:bg-white/10 transition-colors duration-200">
                             {row.map((cell, cellIndex) => (
-                                <td key={cellIndex} className="p-4 sm:p-5 text-red-100 font-serif text-xl">
+                                <td key={cellIndex} className={`p-4 sm:p-5 text-gray-50 text-xl md:text-2xl whitespace-normal break-words ${cellIndex > 0 ? 'font-bold text-right' : ''}`}>
                                 {cell}
                                 </td>
                             ))}
@@ -219,9 +235,9 @@ const App: React.FC = () => {
                 </div>
             </div>
 
-            <div className="w-full lg:w-1/2">
-                <h2 className="text-2xl font-bold text-yellow-300 uppercase mb-4 text-center lg:text-left">Biểu đồ XAU/USD (TradingView)</h2>
-                <div className="bg-red-800/50 backdrop-blur-sm border border-red-500 rounded-xl shadow-2xl overflow-hidden" style={{height: '450px'}}>
+            <div className="w-full lg:w-[40%]">
+                <h2 className="text-2xl font-bold text-yellow-200 uppercase mb-4 text-center lg:text-left font-heading">Biểu đồ XAU/USD</h2>
+                <div className="bg-black/30 backdrop-blur-sm border border-yellow-400/40 rounded-xl shadow-2xl shadow-black/40 overflow-hidden" style={{height: '450px'}}>
                    <TradingViewWidget />
                 </div>
             </div>
@@ -229,7 +245,7 @@ const App: React.FC = () => {
           </div>
         )}
         
-        <footer className="mt-12 text-red-200 text-sm text-center">
+        <footer className="mt-12 text-red-200/80 text-sm text-center">
           <p>Tạo bởi AI với React & Tailwind CSS</p>
         </footer>
       </div>

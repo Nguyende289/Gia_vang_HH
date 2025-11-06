@@ -16,7 +16,7 @@ const parseCSV = (text) => {
 };
 
 // ID của Google Sheet được chỉ định sẵn
-const GOOGLE_SHEET_ID = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
+const GOOGLE_SHEET_ID = '1IBNYEMAIHjzUPSEcG1NIvn80t_vJO0_pFYiTcWquRH4';
 
 const Clock = () => {
     const [time, setTime] = React.useState(new Date());

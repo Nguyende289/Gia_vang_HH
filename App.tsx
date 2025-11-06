@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+// FIX: Add missing import for React to fix UMD global reference errors.
+import React from 'react';
 
 // Hàm hỗ trợ để phân tích cú pháp CSV đơn giản
 const parseCSV = (text: string): string[][] => {
@@ -15,12 +16,12 @@ const parseCSV = (text: string): string[][] => {
 };
 
 // ID của Google Sheet được chỉ định sẵn
-const GOOGLE_SHEET_ID = '1pjutzB4Bc9WBtqmA3MUoxQ7CoZpBvHBMGR1OxaZQENE';
+const GOOGLE_SHEET_ID = '1IBNYEMAIHjzUPSEcG1NIvn80t_vJO0_pFYiTcWquRH4';
 
 const Clock: React.FC = () => {
-    const [time, setTime] = useState(new Date());
+    const [time, setTime] = React.useState(new Date());
 
-    useEffect(() => {
+    React.useEffect(() => {
         const timerId = setInterval(() => {
             setTime(new Date());
         }, 1000);
@@ -54,10 +55,10 @@ const Clock: React.FC = () => {
 
 // Component để nhúng biểu đồ TradingView
 const TradingViewWidget: React.FC = () => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const widgetLoaded = useRef(false);
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const widgetLoaded = React.useRef(false);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (!containerRef.current || widgetLoaded.current) {
             return;
         }
@@ -104,53 +105,76 @@ const TradingViewWidget: React.FC = () => {
 
 
 const App: React.FC = () => {
-  const [sheetData, setSheetData] = useState<string[][]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [sheetData, setSheetData] = React.useState<string[][]>([]);
+  const [headerData, setHeaderData] = React.useState({
+    title: 'VÀNG BẠC HÙNG HẠ',
+    address: 'Đ/c: 136 - Phố huyện',
+    phone: 'ĐT: 0356999659',
+  });
+  const [loading, setLoading] = React.useState<boolean>(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const fetchData = useCallback(async (isManual: boolean = false) => {
+  const fetchData = React.useCallback(async (isManual: boolean = false) => {
     if (isManual) {
         setLoading(true);
     }
     setError(null);
     
     try {
-      // Thêm timestamp để tránh cache
-      const response = await fetch(`https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&t=${new Date().getTime()}`);
+      const tableUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&t=${new Date().getTime()}`; // Lấy sheet đầu tiên
+      const headerUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?sheet=Sheet2&tqx=out:csv&t=${new Date().getTime()}`; // Lấy Sheet2
+
+      const [tableResponse, headerResponse] = await Promise.all([
+        fetch(tableUrl),
+        fetch(headerUrl)
+      ]);
       
-      if (!response.ok) {
-        throw new Error('Không thể tải dữ liệu. Vui lòng kiểm tra lại Sheet ID và quyền truy cập.');
+      if (!tableResponse.ok) {
+        throw new Error('Không thể tải dữ liệu bảng giá. Vui lòng kiểm tra lại Sheet ID và quyền truy cập.');
       }
 
-      const csvText = await response.text();
+      const csvText = await tableResponse.text();
       const data = parseCSV(csvText);
       
       if (data.length === 0 || (data.length === 1 && data[0].length === 1 && data[0][0] === '')) {
-          throw new Error('Bảng tính trống hoặc không có dữ liệu.');
+          throw new Error('Bảng tính (sheet đầu tiên) trống hoặc không có dữ liệu.');
       }
 
-      // Chỉ lấy 3 cột đầu tiên
       const threeColumnData = data.map(row => row.slice(0, 3));
       setSheetData(threeColumnData);
+
+      if (headerResponse.ok) {
+        const headerCsvText = await headerResponse.text();
+        const headerCsvData = parseCSV(headerCsvText);
+        // Lấy dữ liệu từ B2, B3, B4. Mảng bắt đầu từ 0 nên ta lấy hàng 1, 2, 3.
+        if (headerCsvData.length >= 4) {
+            setHeaderData({
+                title: headerCsvData[1]?.[1] || 'VÀNG BẠC HÙNG HẠ', // B2
+                address: headerCsvData[2]?.[1] ? `Đ/c: ${headerCsvData[2][1]}` : '', // B3
+                phone: headerCsvData[3]?.[1] ? `ĐT: ${headerCsvData[3][1]}` : '' // B4
+            });
+        }
+      } else {
+        console.warn('Không thể tải dữ liệu tiêu đề từ Sheet2.');
+      }
 
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Đã có lỗi xảy ra. Hãy chắc chắn rằng bảng tính của bạn được chia sẻ công khai.');
     } finally {
-      if (isManual || sheetData.length === 0) {
+      if (isManual) {
         setLoading(false);
       }
     }
-  }, [sheetData.length]);
-
-  // Tải dữ liệu lần đầu
-  useEffect(() => {
-    fetchData(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Tải dữ liệu lần đầu
+  React.useEffect(() => {
+    fetchData(true);
+  }, [fetchData]);
+
   // Tự động làm mới dữ liệu sau mỗi 10 giây
-  useEffect(() => {
+  React.useEffect(() => {
     const interval = setInterval(() => {
       fetchData(false); // false để không hiển thị spinner loading
     }, 10000); // 10 giây
@@ -164,11 +188,13 @@ const App: React.FC = () => {
         
         <header className="mb-8 flex justify-between items-start">
           <div className="text-left">
-            <h2 className="text-3xl md:text-4xl font-bold text-yellow-300 tracking-wider font-heading">VÀNG BẠC HUYNH HIỀN</h2>
-            <p className="text-base text-red-100">Đ/c: 108 - Phố Ngô xá</p>
-            <p className="text-base text-red-100">ĐT: 0983661316</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-yellow-300 tracking-wider font-heading">{headerData.title}</h2>
+            <p className="text-base text-red-100">{headerData.address}</p>
+            <p className="text-base text-red-100">{headerData.phone}</p>
           </div>
-          <Clock />
+          <div className="flex items-center gap-4">
+            <Clock />
+          </div>
         </header>
 
         <div className="text-center">
@@ -203,7 +229,7 @@ const App: React.FC = () => {
            </div>
         )}
 
-        {error && <div className="bg-red-900/80 border border-yellow-400/50 text-white p-4 rounded-lg my-6">{error}</div>}
+        {error && <div className="bg-red-900/80 border border-yellow-400/50 text-white p-4 rounded-lg my-6 whitespace-pre-wrap">{error}</div>}
 
         {!error && sheetData.length > 0 && (
           <div className="mt-8 w-full flex flex-col lg:flex-row gap-8 items-start">
@@ -253,4 +279,5 @@ const App: React.FC = () => {
   );
 };
 
+// FIX: Add default export for the App component so it can be imported in index.tsx.
 export default App;
